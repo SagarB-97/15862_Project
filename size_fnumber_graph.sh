@@ -1,0 +1,1 @@
+/Users/skalasib/anaconda3/bin/python3 size_fnumber_graph.py
