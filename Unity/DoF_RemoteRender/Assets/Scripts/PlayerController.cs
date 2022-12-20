@@ -51,6 +51,7 @@ public class PlayerController : MonoBehaviour
     }
 
     Vector2 inputMovement;
+    Vector2 inputLook;
 
     private readonly CameraState m_TargetCameraState = new CameraState();
     private readonly CameraState m_InterpolatingCameraState = new CameraState();
@@ -61,10 +62,14 @@ public class PlayerController : MonoBehaviour
     [Header("Movement Settings"), Tooltip("Movement Sensitivity Factor."), Range(0.001f, 1f), SerializeField]
     private float movementSensitivityFactor = 0.1f;
 
+    [Header("Rotation Settings"),
+         Tooltip("X = Change in mouse position.\nY = Multiplicative factor for camera rotation."), SerializeField]
+    private AnimationCurve mouseSensitivityCurve =
+            new AnimationCurve(new Keyframe(0f, 0.5f, 0f, 5f), new Keyframe(1f, 2.5f, 0f, 0f));
+
     public void Look(InputAction.CallbackContext value)
     {
-        Vector2 input = value.ReadValue<Vector2>();
-        transform.eulerAngles += new Vector3(-input.y, input.x, 0);
+        inputLook = value.ReadValue<Vector2>();
     }
 
     public void OnMovement(InputAction.CallbackContext value)
@@ -83,6 +88,7 @@ public class PlayerController : MonoBehaviour
     {
 
         UpdateTargetCameraStateDirection(inputMovement);
+        UpdateTargetCameraStateFromInput(inputLook);
 
         // Framerate-independent interpolation
         // Calculate the lerp amount, such that we get 99% of the way to our target in the specified time
@@ -103,5 +109,18 @@ public class PlayerController : MonoBehaviour
         translation += Vector3.back * input.y * movementSensitivityFactor;
         translation *= Mathf.Pow(2.0f, 3.5f);
         m_TargetCameraState.Translate(translation);
+    }
+
+    private void UpdateTargetCameraStateFromInput(Vector2 input)
+    {
+        if (!invertY)
+        {
+            input.y *= -1;
+        }
+
+        float mouseSensitivityFactor = mouseSensitivityCurve.Evaluate(input.magnitude);
+
+        m_TargetCameraState.yaw += input.x * mouseSensitivityFactor;
+        m_TargetCameraState.pitch += input.y * mouseSensitivityFactor;
     }
 }
